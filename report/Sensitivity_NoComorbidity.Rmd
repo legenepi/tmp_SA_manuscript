@@ -1,0 +1,112 @@
+---
+title: "Sensitivity analysis: cases without comorbidity"
+author: "Noemi Nicole Piga"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    code_folding: "hide"
+    toc: true
+    toc_float: true
+    theme: united
+---
+
+```{r, setup, hide = TRUE}
+#library reticulate to be able to add chunks in another language
+library(reticulate)
+library(kableExtra)
+#To run this .rmd file in a terminal being in the project folder:
+#export PATH=${PATH}:/cm/shared/apps/R/deps/rstudio/bin/pandoc
+#file="./src/report/Sensitivity_NoComorbidity.Rmd"
+#module load R
+#Rscript -e 'rmarkdown::render("'$file'")'
+```
+
+
+# Rationale
+In the discovery cases definition, I included individuals with death/hospitalisation for asthma who also present a diagnosis for comorbidities;
+Comorbidities are defined as COPD and/or emphysema/chronic bronchitis.
+<br>
+Among the 7,681 cases, I had included 1,488 with either death/hospitalisation with also a diagnosis for comorbidities.
+This represents a modest percentage of our cases (19.37%).
+We checked some physiological parameters including fev1 (% predicted), fev1/fvc, and BMI comparing cases with comorbidities (1,488)
+and without comorbidities (6,193): the cases with comorbidities showed lower respiratory capacity and higher BMI.
+<br>
+Therefore, based on teh difference in physiological features, we decided to run a sensitivity analysis: we excluded the cases with comorbidities and
+we wanted to assess if the associated variants showed the same direction of effect of the discovery analysis.
+
+# Analysis
+We performed a GWAS analysis using REGENIE (v3.2.1) with 6,193 cases-no comorbidity- and 38,405 controls.
+The number of controls is the same as in the discovery analysis (ratio case:control is 1:6, higher than the discovery which is 1:5).
+We then compared the results for the suggestive signals, looking at the p-value and effect size.
+
+Code: tmp_manuscript/src/
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/sensitivity_comob_pheno_cov_file.R'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/Demographicscheck_cases_with_comorbidities.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/Demographicscheck_cases_with_comorbidities.R'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/plink_QC_eur.sh
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/plink_QC_eur.sh'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/run_regenie_step1.sh
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/run_regenie_step1.sh'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/run_regenie_step2.sh
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/run_regenie_step2.sh'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/create_input_munge_summary_stats.sh
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/create_input_munge_summary_stats.R'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/postGWAS_analyses.sh
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/postGWAS_analyses.sh'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/plot_functions.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/plot_functions.R'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/REGENIE_plots.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/REGENIE_plots.R'), eval=FALSE}
+```
+
+Code: tmp_manuscript/src/sensitivity_check.R
+```{r, code = readLines('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/src/sensitivity_check.R'), eval=FALSE}
+```
+
+# Results
+The GWAS analysis showed a LDSC intercept of 1.02 suggesting no further correction needed to the statistics.
+<br>
+The sensitivity analysis results showed the same direction of effect of the discovery analysis. For some variants, the p-value is less significant.
+
+```{r, fig.align='center', fig.cap='Manhattan Plot sensitivity analysis no-comorbidities.', echo = FALSE, eval=TRUE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output/Manhattan_plot_GWAS_maf001_broad_pheno_nocomob.png')
+```
+```{r, fig.align='center', fig.cap='Q-Q Plot sensitivity analysis no-comorbidities.', echo = FALSE, eval=TRUE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output/Q-Q_plot_GWAS_maf001_broad_pheno_nocomob.png')
+```
+```{r, fig.align='center', fig.cap='Odds ration plot.', echo = FALSE, eval=TRUE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output/sensitivity_nocomob_check_oddsratio.png')
+```
+```{r, fig.align='center', fig.cap='P-value plot.', echo = FALSE, eval=TRUE}
+knitr::include_graphics('/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output/sensitivity_nocomob_check_pval.png')
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+library(data.table)
+library(kableExtra)
+library(tidyverse)
+dt <- fread("/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output/sensitivity_nocomob_suggestive_discovery.txt",header=T)
+dt$'OR_95_CI' <- paste0(format(round(dt$odds_ratio,2),nsmall=2)," [",format(round(dt$ci_lower,2),nsmall=2),"-",format(round(dt$ci_upper,2),nsmall=2),"]")
+dt <- dt %>% select(c("SNP_UKB","chr","pos_b37","pos_b38","EA","NEA","pval","pval_no_comob","OR_95_CI","OR_95_CI_no_comob","concordance_nocomob",))
+dt$pval_no_comob <- formatC(dt$pval_no_comob, format = "e", digits = 2)
+dt$pval <- formatC(dt$pval, format = "e", digits = 2)
+
+
+kbl(dt) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
