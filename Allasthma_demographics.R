@@ -2,8 +2,6 @@
 
 #Rationale: demographic of all-asthma europeans - to be compared with the severe asthma phenotype for the manuscript
 
-#run and save it as : Rscript Descriptive_difference_test.R > demographics_allasthma_european
-
 library(tidyverse)
 library(dplyr)
 library(data.table)
@@ -144,8 +142,13 @@ copd_ecb <- fread("eid_emphchronCOPD_union.txt") %>% rename(eid = V1)
 copd_ecb$comob <- as.factor(1)
 demo <- demo %>% left_join(copd_ecb, by = "eid")
 
+#Save descriptive tables for all-asthma Europeans:
+fwrite(demo,"all_asthma_demographics_20102024",sep="\t",quote=F)
+fwrite(demo_hes_death,"all_asthma_demographics_hesdeath_20102024",sep="\t",quote=F)
+fwrite(demo_eos,"all_asthma_demographics_eos_20102024",sep="\t",quote=F)
+fwrite(demo_neu,"all_asthma_demographics_neu_20102024",sep="\t",quote=F)
 
-#Find number for descriptive table:
+#Create descriptive function - calculate summary stats for demographic info:
 descriptive <- function(demo,demo_hes_death,demo_eos,demo_neu) {
 print("Summary statistics all-comer asthma")
 
@@ -240,10 +243,10 @@ print(table(demo$comob,exclude=NULL))
 print(prop.table(table(demo$comob,exclude=NULL)))
 }
 
-#descriptive all-comer asthma:
+#Descriptive all-comer asthma:
 descriptive(demo,demo_hes_death,demo_eos,demo_neu)
 
-#descriptive all-comer asthma not cases:
+#Descriptive all-comer asthma not cases:
 cases <- demo %>% filter(cases_broad_EUR == 1)
 cases_IID <- cases$IID
 demo_notcases <- demo %>% filter(! IID %in% cases_IID)
@@ -259,9 +262,15 @@ demo_notcases_neu <- demo_notcases_neu %>%
   mutate(min_neu = min_(c_across()),
          max_neu = max_(c_across()))
 
+#Save descriptive tables for all-asthma Europeans:
+fwrite(demo_notcases,"notcases_asthma_demographics_20102024",sep="\t",quote=F)
+fwrite(demo_notcases_hes_death,"notcases_asthma_demographics_hesdeath_20102024",sep="\t",quote=F)
+fwrite(demo_notcases_eos,"notcases_asthma_demographics_eos_20102024",sep="\t",quote=F)
+fwrite(demo_notcases_neu,"notcases_asthma_demographics_neu_20102024",sep="\t",quote=F)
 descriptive(demo_notcases,demo_notcases_hes_death,demo_notcases_eos,demo_notcases_neu)
 
-#descriptive asthma cases:
+
+#Descriptive asthma cases:
 cases <- demo %>% filter(cases_broad_EUR == 1)
 cases_hes_death <- demo_hes_death %>% filter(IID %in% cases_IID)
 cases_eos <- left_join(cases,eos,by="eid") %>% select(eos1,eos2,eso3)
@@ -275,5 +284,52 @@ cases_neu <- cases_neu %>%
   mutate(min_neu = min_(c_across()),
          max_neu = max_(c_across()))
 
+#Save descriptive tables for all-asthma Europeans:
+fwrite(cases,"cases_asthma_demographics_20102024",sep="\t",quote=F)
+fwrite(cases_hes_death,"cases_asthma_demographics_hesdeath_20102024",sep="\t",quote=F)
+fwrite(cases_eos,"cases_asthma_demographics_eos_20102024",sep="\t",quote=F)
+fwrite(cases_neu,"cases_asthma_demographics_neu_20102024",sep="\t",quote=F)
 descriptive(cases,cases_hes_death,cases_eos,cases_neu)
+
+#Statistical difference with wilcox.test() between asthma-non cases and cases:
+demo_notcases$NC_C <- as.factor(0)
+cases$NC_C <- as.factor(1)
+df <- rbind(demo_notcases,cases)
+
+##create a column in df: asthma-non cases and cases:
+print("genetic sex")
+wilcox.test(df$genetic_sex~df$NC_C,)$p.value
+print("age at recruitment")
+wilcox.test(df$age_at_recruitment~df$NC_C)$p.value
+print("BMI")
+wilcox.test(df$BMI~df$NC_C)$p.value
+print("FEV1 % predicted")
+wilcox.test(df$fev1_perc_pred~df$NC_C)$p.value
+print("FEV1/FVC")
+wilcox.test(df$ff.best~df$NC_C)$p.value
+print("Smoking status")
+chisq.test(table(df$ubiopred_smk,df$NC_C))
+print("Category onset")
+chisq.test(table(df$category_onset,df$NC_C))
+print("prednisolone use")
+chisq.test(table(df$pred_use,df$NC_C))
+print("allergy")
+chisq.test(table(df$allergy,df$NC_C))
+print("comorbidities")
+chisq.test(table(df$comob,df$NC_C))
+
+print("eosinophils")
+demo_notcases_eos$NC_C <- as.factor(0)
+cases_eos$NC_C <- as.factor(1)
+df_eos <- rbind(demo_notcases_eos,cases_eos)
+wilcox.test(df_eos$max_eos~df_eos$NC_C)$p.value
+
+print("neutrophils")
+demo_notcases_neu$NC_C <- as.factor(0)
+cases_neu$NC_C <- as.factor(1)
+df_neu <- rbind(demo_notcases_neu,cases_neu)
+wilcox.test(df_neu$max_neu~df_neu$NC_C)$p.value
+
+
+
 
