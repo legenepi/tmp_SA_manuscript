@@ -8,6 +8,28 @@ library(tidyverse)
 library(dplyr)
 library(data.table)
 library(hablar)
+library(readxl)
+
+#Functions:
+#function outliers:
+outliers <- function(x) {
+
+  Q1 <- quantile(x, probs=.25)
+  Q3 <- quantile(x, probs=.75)
+  iqr = Q3-Q1
+
+ upper_limit = Q3 + (iqr*1.5)
+ lower_limit = Q1 - (iqr*1.5)
+
+ x > upper_limit | x < lower_limit
+}
+
+remove_outliers <- function(df, cols = names(df)) {
+  for (col in cols) {
+    df <- df[!outliers(df[[col]]),]
+  }
+  df
+}
 
 #load input
 ##demographic table:
@@ -57,10 +79,10 @@ eur_ukbb <- read.table("/data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/d
 eur_ukbb$IID <- as.factor(eur_ukbb$IID)
 eur_ukbb_in_meta <- eur_ukbb %>% inner_join(ukbb_IID, by = c("IID")) %>%
                     select(IID,eid,BMI,smoking_status,category_onset)
-#check for cateory onset: it is NAs for all of them because they are controls:
+#check for category onset: it should be NAs for all of them because they are controls:
 table(eur_ukbb_in_meta$category_onset,exclude=NULL)
 
-##lung funciton for UK-Biobank:
+##lung function for UK-Biobank:
 #Lung function from Kath file:
 bridge_app648_8389 <- fread("/data/gen1/UKBiobank/application_648/mapping_to_app8389.txt",header=T)
 bridge_app648_8389$app8389 <- as.character(bridge_app648_8389$app8389)
@@ -107,3 +129,11 @@ demo_neu <- demo_neu %>%
 eur_ukbb_in_meta_demo <- cbind(eur_ukbb_in_meta,demo_eos$max_eos,demo_neu$max_neu) %>%
                          rename(eos_count = 'demo_eos$max_eos', neu_count = 'demo_neu$max_neu')
 fwrite(eur_ukbb_in_meta_demo,"ukbb_ctrl_in_GUU_demotraits.txt",sep="\t",quote=F)
+
+#Upload the UKBB data:
+ukbb <- fread("ukbb_ctrl_in_GUU_demotraits.txt")
+
+#Upload and clean demographic data for U-BIOPRED:
+#Saved the file in tab format (Excel --> export as txt)
+
+ubiopred <- fread("UBIOPRED_data.txt")
