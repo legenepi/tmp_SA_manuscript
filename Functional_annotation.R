@@ -17,6 +17,14 @@ annot <- annot %>% rename(Functional_annotation=Genecode.Comprehensive.Category)
 #remove MHC region credset:
 annot <- annot %>% filter(!str_starts(id, '6-3'))
 
+#April 2025:
+favor_file <- "/alice-home/3/n/nnp5/PhD/PhD_project/Var_to_Gene/input/Additional_credset_snps_March2025/20250310_FAVOR_output_additional_credset_SNPs_processed.csv.gz"
+annot <- fread(favor_file,na.strings = c("",NA))
+annot <- annot %>% select("VariantVcf","Chromosome","Position","GenecodeComprehensiveCategory") %>%
+    rename(id="VariantVcf",chromosome="Chromosome",posb38="Position")
+annot <- as.data.frame(sapply(annot, function(x) gsub("\"", "", x)))
+annot <- annot %>% rename(Functional_annotation=GenecodeComprehensiveCategory)
+table(annot$Func)
 
 ##pie chart:
 # Add a count column based on each Functional_annotation category
