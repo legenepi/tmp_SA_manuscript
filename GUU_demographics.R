@@ -135,5 +135,9 @@ ukbb <- fread("ukbb_ctrl_in_GUU_demotraits.txt")
 
 #Upload and clean demographic data for U-BIOPRED:
 #Saved the file in tab format (Excel --> export as txt)
-
 ubiopred <- fread("UBIOPRED_data.txt")
+#bridge file: use the column “Baseline_visit_kitID” to bridge with my case/controls IDs, and “Patient” and “cohort”
+#to bridge with UBIOPRED collabs data:
+bridge_file <- fread("/rfs/TobinGroup/GWAtraits/FEV/AIRPROM/UBIOPRED/phenotype_data/UBIOPRED_pheno")
+ubiopred_cases <- fread()
+ubiopred_controls <- fread()

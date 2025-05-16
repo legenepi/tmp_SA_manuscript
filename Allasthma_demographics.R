@@ -149,8 +149,7 @@ fwrite(demo_eos,"all_asthma_demographics_eos_20102024",sep="\t",quote=F)
 fwrite(demo_neu,"all_asthma_demographics_neu_20102024",sep="\t",quote=F)
 
 #Create descriptive function - calculate summary stats for demographic info:
-descriptive <- function(demo,demo_hes_death,demo_eos,demo_neu) {
-print("Summary statistics all-comer asthma")
+descriptive <- function(demo,demo_hes_death,demo_eos,demo_neu){
 
 #sex:
 print("Sex : count and percentage")
@@ -188,7 +187,33 @@ df <- remove_outliers(df, 'max_neu')
 print(mean(df$max_neu))
 print(sd(df$max_neu))
 
+#Smoking status (ubiopred):
+print("Smoking status (ubiopred): count and percentage")
+print("Cases")
+print(table(demo$ubiopred_smk,exclude=NULL))
+print(prop.table(table(demo$ubiopred_smk,exclude=NULL)))
+
+#fev1_perc_pred:
+print("fev1_perc_pred (From Kath data): mean and SD")
+print(sum(is.na(demo$fev1_perc_pred)))
+df <- demo %>% filter(!is.na(fev1_perc_pred))
+df <- remove_outliers(df, 'fev1_perc_pred')
+print(mean(df$fev1_perc_pred))
+print(sd(df$fev1_perc_pred))
+
+#ff.best:
+print("ff.best (From Kath data): mean and SD")
+print(sum(is.na(demo$ff.best)))
+df <- demo %>% filter(!is.na(ff.best))
+df <- remove_outliers(df, 'ff.best')
+print(mean(df$ff.best))
+print(sd(df$ff.best))
+
 #Hospitalisation:
+if (demo_hes_death == "NA"){
+print("controls does not need further descriptive")
+}
+else {
 print("Hospitalisation: count and percentage")
 print(table(demo_hes_death$level_hesin,exclude=NULL))
 print(prop.table(table(demo_hes_death$level_hesin,exclude=NULL)))
@@ -197,12 +222,6 @@ print(prop.table(table(demo_hes_death$level_hesin,exclude=NULL)))
 print("Death: count and percentage")
 print(table(demo_hes_death$level_death,exclude=NULL))
 print(prop.table(table(demo_hes_death$level_death,exclude=NULL)))
-
-#Smoking status (ubiopred):
-print("Smoking status (ubiopred): count and percentage")
-print("Cases")
-print(table(demo$ubiopred_smk,exclude=NULL))
-print(prop.table(table(demo$ubiopred_smk,exclude=NULL)))
 
 #Category onset:
 print("Category onset: count and percentage")
@@ -221,26 +240,11 @@ print("Hay fever-rhinitis, eczema/atopic dermatitis:")
 print(table(demo$allergy,exclude=NULL))
 print(prop.table(table(demo$allergy,exclude=NULL)))
 
-#fev1_perc_pred:
-print("fev1_perc_pred (From Kath data): mean and SD")
-print(sum(is.na(demo$fev1_perc_pred)))
-df <- demo %>% filter(!is.na(fev1_perc_pred))
-df <- remove_outliers(df, 'fev1_perc_pred')
-print(mean(df$fev1_perc_pred))
-print(sd(df$fev1_perc_pred))
-
-#ff.best:
-print("ff.best (From Kath data): mean and SD")
-print(sum(is.na(demo$ff.best)))
-df <- demo %>% filter(!is.na(ff.best))
-df <- remove_outliers(df, 'ff.best')
-print(mean(df$ff.best))
-print(sd(df$ff.best))
-
 #comorbidities:
 print("Comorbidities:")
 print(table(demo$comob,exclude=NULL))
 print(prop.table(table(demo$comob,exclude=NULL)))
+}
 }
 
 #Descriptive all-comer asthma:
@@ -291,6 +295,37 @@ fwrite(cases_eos,"cases_asthma_demographics_eos_20102024",sep="\t",quote=F)
 fwrite(cases_neu,"cases_asthma_demographics_neu_20102024",sep="\t",quote=F)
 descriptive(cases,cases_hes_death,cases_eos,cases_neu)
 
+#Descriptive controls:
+df_tmp <- read.table("/data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/demo_EUR_pheno_cov_broadasthma.txt",header=T,sep=" ")
+controls <- df_tmp %>% filter(broad_pheno_1_5_ratio == 0)
+controls$eid <- as.factor(controls$eid)
+controls <- controls %>% left_join(LF_kath_app56607,by="eid")
+controls_eos <- left_join(controls,eos,by="eid") %>% select(eos1,eos2,eso3)
+controls_eos <- controls_eos %>%
+  rowwise() %>%
+  mutate(min_eos = min_(c_across()),
+         max_eos = max_(c_across()))
+controls_neu <- left_join(controls,neu,by="eid") %>% select(neu1,neu2,neu3)
+controls_neu <- controls_neu %>%
+  rowwise() %>%
+  mutate(min_neu = min_(c_across()),
+         max_neu = max_(c_across()))
+
+fwrite(controls_eos,"controls_asthma_demographics_eos_23102024",sep="\t",quote=F)
+fwrite(controls_neu,"controls_asthma_demographics_neu_23102024",sep="\t",quote=F)
+
+controls <- controls %>% mutate(pack_per_year_threshold = case_when(cigarette_pack_years < 5 ~ "less_than_5",
+                                                                          cigarette_pack_years >= 5 ~ "equal_or_more_than_5"))
+controls$pack_per_year_threshold <- as.factor(controls$pack_per_year_threshold)
+controls <- controls %>% mutate(ubiopred_smk = ifelse((controls$pack_per_year_threshold == "less_than_5" & controls$smoking_status == 1) | controls$smoking_status == 0 , "non_smoker",
+                                                      ifelse(controls$smoking_status == 2, "smoker",
+                                                      ifelse(controls$pack_per_year_threshold == "equal_or_more_than_5" & controls$smoking_status == 1, "smoker", NA))))
+
+
+fwrite(controls,"controls_asthma_demographics_23102024",sep="\t",quote=F)
+descriptive(controls,"NA",controls_eos,controls_neu)
+
+
 #Statistical difference with wilcox.test() between asthma-non cases and cases:
 demo_notcases$NC_C <- as.factor(0)
 cases$NC_C <- as.factor(1)
@@ -329,6 +364,37 @@ demo_notcases_neu$NC_C <- as.factor(0)
 cases_neu$NC_C <- as.factor(1)
 df_neu <- rbind(demo_notcases_neu,cases_neu)
 wilcox.test(df_neu$max_neu~df_neu$NC_C)$p.value
+
+##statistical difference between cases/control:
+cases <- fread("cases_asthma_demographics_20102024")
+cases_eos <- fread("cases_asthma_demographics_eos_20102024")
+cases_neu <- fread("cases_asthma_demographics_neu_20102024")
+
+cases_tmp <- cases %>% select(broad_pheno_1_5_ratio,genetic_sex,age_at_recruitment,BMI,fev1_perc_pred,ff.best) #ubiopred_smk, to add when trobleshooting it
+controls_tmp <- controls %>% select(broad_pheno_1_5_ratio,genetic_sex,age_at_recruitment,BMI,fev1_perc_pred,ff.best) #ubiopred_smk, to add when trobleshooting it
+df <- rbind(cases_tmp,controls_tmp)
+print("genetic sex")
+wilcox.test(df$genetic_sex~df$broad_pheno_1_5_ratio,)$p.value
+print("age at recruitment")
+wilcox.test(df$age_at_recruitment~df$broad_pheno_1_5_ratio)$p.value
+print("BMI")
+wilcox.test(df$BMI~df$broad_pheno_1_5_ratio)$p.value
+print("FEV1 % predicted")
+wilcox.test(df$fev1_perc_pred~df$broad_pheno_1_5_ratio)$p.value
+print("FEV1/FVC")
+wilcox.test(df$ff.best~df$broad_pheno_1_5_ratio)$p.value
+print("Smoking status")
+chisq.test(table(df$ubiopred_smk,df$broad_pheno_1_5_ratio))
+print("eosinophils")
+cases_eos$broad_pheno_1_5_ratio <- as.factor(0)
+controls_eos$broad_pheno_1_5_ratio <- as.factor(1)
+df_eos <- rbind(cases_eos,controls_eos)
+wilcox.test(df_eos$max_eos~df_eos$broad_pheno_1_5_ratio)$p.value
+print("neutrophils")
+cases_neu$broad_pheno_1_5_ratio <- as.factor(0)
+controls_neu$broad_pheno_1_5_ratio <- as.factor(1)
+df_neu <- rbind(cases_neu,controls_neu)
+wilcox.test(df_neu$max_neu~df_neu$broad_pheno_1_5_ratio)$p.value
 
 
 
