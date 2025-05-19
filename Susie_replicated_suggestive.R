@@ -32,7 +32,7 @@ print("Running Susie...")
 #16_rs3024619_26864806_27864806: no credset with coverage 0.80 (min)
 #17_17:38073838_CCG_C_37573838_38573838: no credset with coverage 0.80 (min)
 print("coverage 0.60")
-fitted_rss <- susie_rss(z = sumstat$V1, R = data.cor, L = 10, n=46086, coverage=0.60)
+fitted_rss <- susie_rss(z = sumstat$V1, R = data.cor, L = 10, n=46086, coverage=0.95)
 
 
 summary(fitted_rss)$cs

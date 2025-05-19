@@ -30,6 +30,11 @@ grep "rs73107993\|rs11071559\|rs3024619\|17:38073838_CCG_C\|rs35570272\|rs183725
     ${PATH_finemapping}/input/fine_mapping_regions_replicated_suggestive_input > \
     /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_Jan2025
 
+##May 2025:
+#rs2188962_rs848 and rs1444789_rs201499805  loci to be re-run:
+grep "rs2188962_rs848\|rs201499805_rs1444789" \
+    ${PATH_finemapping}/input/fine_mapping_regions_replicated_suggestive_input > \
+    /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_May2025
 
 ##output folder:
 mkdir ${PATH_finemapping}/output/susie_replicated_suggestive_Jan2025
@@ -44,6 +49,16 @@ SNP=$(awk -v row="$line" ' NR == row {print $1 }' /home/n/nnp5/PhD/PhD_project/t
 chr=$(awk -v row="$line" ' NR == row {print $2 }' /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_Jan2025)
 start=$(awk -v row="$line" 'NR == row {print $4}' /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_Jan2025)
 end=$(awk -v row="$line" 'NR == row {print $5}' /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_Jan2025)
+
+for line in {1..2}
+do
+line=1
+##Input data:
+SNP=$(awk -v row="$line" ' NR == row {print $1 }' /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_May2025)
+chr=$(awk -v row="$line" ' NR == row {print $2 }' /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_May2025)
+start=$(awk -v row="$line" 'NR == row {print $4}' /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_May2025)
+end=$(awk -v row="$line" 'NR == row {print $5}' /home/n/nnp5/PhD/PhD_project/tmp_manuscript/fine_mapping_regions_replicated_suggestive_input_May2025)
+
 
 ##Creating region bgen
 #if chr has double digit, I do not need the '0' in the chromosome name, so I need two different string for the
