@@ -4,7 +4,7 @@
 
 #SBATCH --job-name=ld_measure_21replvrs
 #SBATCH --output=/scratch/gen1/nnp5/tmp_manuscript/%x-%j.out
-#SBATCH --time=72:0:0
+#SBATCH --time=2:0:0
 #SBATCH --mem=100gb
 #SBATCH --account=gen1
 #SBATCH --export=NONE
@@ -18,13 +18,26 @@
 module unload plink2
 module load plink
 
-file="/home/n/nnp5/PhD/PhD_project/tmp_manuscript/21replvars_rsid_chr.txt"
-while IFS= read -r line; do
-  rsid=$(echo "$line" | awk -F "\t" '{print $1}')
-  chr=$(echo "$line" | awk -F "\t" '{print $2}')
-  echo $rsid
-  echo $chr
-  plink \
+#file="/home/n/nnp5/PhD/PhD_project/tmp_manuscript/21replvars_rsid_chr.txt"
+#while IFS= read -r line; do
+#  rsid=$(echo "$line" | awk -F "\t" '{print $1}')
+#  chr=$(echo "$line" | awk -F "\t" '{print $2}')
+#  echo $rsid
+#  echo $chr
+#  plink \
+#    --bfile /scratch/gen1/nnp5/tmp_manuscript/broad_pheno_plink_file_v3_chr${chr} \
+#    --r2 \
+#    --ld-snp ${rsid} \
+#    --ld-window-kb 1000 \
+#    --ld-window 99999 \
+#    --ld-window-r2 0 \
+#    --out /scratch/gen1/nnp5/tmp_manuscript/ld_chr${chr}_${rsid}
+#done < "$file"
+
+#for chromosome 17 variant:
+chr=17
+rsid="17:38073838_CCG_C"
+plink \
     --bfile /scratch/gen1/nnp5/tmp_manuscript/broad_pheno_plink_file_v3_chr${chr} \
     --r2 \
     --ld-snp ${rsid} \
@@ -32,4 +45,3 @@ while IFS= read -r line; do
     --ld-window 99999 \
     --ld-window-r2 0 \
     --out /scratch/gen1/nnp5/tmp_manuscript/ld_chr${chr}_${rsid}
-done < "$file"

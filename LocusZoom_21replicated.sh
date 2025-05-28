@@ -13,7 +13,7 @@ PHENO="maf001_broad_pheno_1_5_ratio"
 #input: change i and rsid for each credible set:
 #rs12470864	2 - done
 #rs6761047	2 - done
-#rs35570272	3
+#rs35570272	 - done
 #rs1837253	5 - done - weak LD
 #rs3806932	5 - done
 #rs2188962	5 - done
@@ -40,8 +40,8 @@ PHENO="maf001_broad_pheno_1_5_ratio"
 
 ####built-in implementation with LD with case/control cohort and credset highlighted:
 ##i, rsid, locus to change for each credset:
-i=15
-rsid="rs17293632"
+i=17
+rsid="17:38073838_CCG_C"
 
 #LD with respect to the 21 replicated variant:
 sbatch src/plink_ld_for_21replvars.sh

@@ -1,16 +1,16 @@
 #!/bin/bash
 
 #SBATCH --output=/scratch/gen1/nnp5/sensitivity_comorb_tmp_data/logerror/%x-%j.out
-#SBATCH --time=15:0:0
-#SBATCH --mem=200gb
+#SBATCH --time=10:0:0
+#SBATCH --mem=500gb
 #SBATCH --account=gen1
 #SBATCH --export=NONE
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=4
 
-PATH_OUT="/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output"
-PHENO="broad_pheno_nocomob"
+#PATH_OUT="/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output"
+#PHENO="broad_pheno_nocomob"
 
 mkdir ${PATH_OUT}/allchr
 GWAS="/home/n/nnp5/PhD/PhD_project/tmp_manuscript/output/allchr"
@@ -78,13 +78,21 @@ ldsc_intercept='1.02'
 
 #run Manhattan, qqplot, lambda for vars with maf >= 0.01:
 PHENO="maf001_broad_pheno_nocomob"
+
 chmod o+x src/plot_functions.R
 dos2unix src/plot_functions.R
 chmod o+x src/REGENIE_plots.R
 dos2unix src/REGENIE_plots.R
-Rscript src/REGENIE_plots.R ${PATH_OUT}/${PHENO}_betase_input_mungestat ${PHENO} ${ldsc_intercept}
+Rscript src/REGENIE_plots.R ${PATH_OUT}/${PHENO}_betase_input_mungestat ${PHENO} ${ldsc_intercept}"""
+#magnify for pval >= E-15:
+module load R
+PHENO="pvalE15_maf001_broad_pheno"
+PHENO="pvalE30_maf001_broad_pheno"
+Rscript src/REGENIE_plots.R \
+    /data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/maf001_broad_pheno_1_5_ratio_betase_input_mungestat \
+    ${PHENO}
 
-
+"""
 #Miami plot:
 to find a new library as the 'hudson' do not work on R 4.3.1
 
@@ -107,4 +115,4 @@ Rscript src/sensitivity_check.R /data/gen1/UKBiobank_500K/severe_asthma/Noemi_Ph
     ${PATH_OUT}/maf001_broad_pheno_nocomob_for_sensitivity \
     ${PATH_OUT}/sensitivity_nocomob_suggestive_discovery.txt
 
-cp ${PATH_OUT}/sensitivity_nocomob_suggestive_discovery.txt /data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/
+cp ${PATH_OUT}/sensitivity_nocomob_suggestive_discovery.txt /data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/"""

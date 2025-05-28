@@ -13,9 +13,9 @@ plot.Manha <- function (dataset,test_type,title) {
 	      colnames(dataset) <- c("SNP","CHR","BP","P") #the Manhattan function needs this format
               filename <- paste0("output/Manhattan_plot_",title,".png")
               plot_title = paste0("Manhattan plot ",title)
-	      png(filename, width = 2700, height = 550, units = "px", pointsize = 12, bg = "white")
-	      manhattan(dataset, main = title, col = c("lightblue","blue3"), chrlabs = as.character(c(1:22)), ylim = c(0,30),
-	      cex = 1.5, cex.axis = 1.5, suggestiveline = F, genomewideline = F, cex.lab = 1.5)
+	      png(filename, width = 2700, height = 550, units = "px", pointsize = 15, bg = "white")
+	      manhattan(dataset, main = title, col = c("lightblue","blue3"), chrlabs = as.character(c(1:22)), ylim = c(0,33),
+	      cex = 2, cex.axis = 2, suggestiveline = F, genomewideline = F, cex.lab = 2)
 	      #function from qqman library
 	      abline(h=-log10(0.00000005),lty="dashed",col="black")
 	      abline(h=-log10(0.000005),lty="solid",col="black")
