@@ -21,14 +21,14 @@ title_plot <- paste0("GWAS_",pheno)
 
 
 #QQ plot with qqman package: one genome-wide for each test-statistic p-val:
-#plot.qqplot(pval_vec = meta$pval, title= title_plot)
+plot.qqplot(pval_vec = meta$pval, title= title_plot)
 
 
 #Manhattan plot:
 # require these columns: rs,chr,ps,pval
-df <- meta %>% select(snpid,b37chr,bp,pval)
-colnames(df) <- c("rs","chr","ps","pval")
-df$chr <- as.numeric(df$chr)
-df$ps <- as.numeric(df$ps)
+#df <- meta %>% select(snpid,b37chr,bp,pval)
+#colnames(df) <- c("rs","chr","ps","pval")
+#df$chr <- as.numeric(df$chr)
+#df$ps <- as.numeric(df$ps)
 ##magnify for p<10-15 association:
-plot.Manha(df, title = title_plot)
+#plot.Manha(df, title = title_plot)

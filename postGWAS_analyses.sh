@@ -88,6 +88,7 @@ Rscript src/REGENIE_plots.R ${PATH_OUT}/${PHENO}_betase_input_mungestat ${PHENO}
 module load R
 PHENO="pvalE15_maf001_broad_pheno"
 PHENO="pvalE30_maf001_broad_pheno"
+PHENO="qqplot_manuscript_maf001_broad_pheno"
 Rscript src/REGENIE_plots.R \
     /data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/maf001_broad_pheno_1_5_ratio_betase_input_mungestat \
     ${PHENO}

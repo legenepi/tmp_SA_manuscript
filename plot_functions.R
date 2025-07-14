@@ -3,7 +3,7 @@ plot.qqplot <- function(pval_vec,title){
 	       filename = paste0("output/Q-Q_plot_",title,".png")
 	       plot_title = paste0("Q-Q plot ",title)
 	       png(filename, width = 480, height = 480, units = "px", pointsize = 12, bg = "white")
-               print(qq(pval_vec, main = plot_title, xlim = c(0,30), ylim = c(0,30), cex.axis = 1, cex = 1, las = 1)) #function from qqman library
+               print(qq(pval_vec, main = plot_title, xlim = c(0,10), ylim = c(0,30), cex.axis = 1, cex = 1, las = 1)) #function from qqman library
                dev.off()
 }
 

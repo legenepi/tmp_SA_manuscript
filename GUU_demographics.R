@@ -10,26 +10,6 @@ library(data.table)
 library(hablar)
 library(readxl)
 
-#Functions:
-#function outliers:
-outliers <- function(x) {
-
-  Q1 <- quantile(x, probs=.25)
-  Q3 <- quantile(x, probs=.75)
-  iqr = Q3-Q1
-
- upper_limit = Q3 + (iqr*1.5)
- lower_limit = Q1 - (iqr*1.5)
-
- x > upper_limit | x < lower_limit
-}
-
-remove_outliers <- function(df, cols = names(df)) {
-  for (col in cols) {
-    df <- df[!outliers(df[[col]]),]
-  }
-  df
-}
 
 #load input
 ##demographic table:
@@ -136,8 +116,41 @@ ukbb <- fread("ukbb_ctrl_in_GUU_demotraits.txt")
 #Upload and clean demographic data for U-BIOPRED:
 #Saved the file in tab format (Excel --> export as txt)
 ubiopred <- fread("UBIOPRED_data.txt")
+#filter for columns:
+col2keep <- c("Patient", "cohort", "Body_Mass_Index_(kg/m2)","eosinophils_(x10^3/uL)", "Smoking_Status", "FEV1/FVC_Ratio_Predicted", "FEV1_Predicted_(L)", "Onset_OR_First_Diagnosis_Age_(years)", "neutrophils_(x10^3/uL)")
+ubiopred <- ubiopred %>% select(all_of(col2keep))
+
 #bridge file: use the column “Baseline_visit_kitID” to bridge with my case/controls IDs, and “Patient” and “cohort”
 #to bridge with UBIOPRED collabs data:
-bridge_file <- fread("/rfs/TobinGroup/GWAtraits/FEV/AIRPROM/UBIOPRED/phenotype_data/UBIOPRED_pheno")
-ubiopred_cases <- fread()
-ubiopred_controls <- fread()
+bridge_file <- read_excel("/rfs/TobinGroup/GWAtraits/FEV/AIRPROM/UBIOPRED/phenotype_data/UBIOPRED_pheno.xlsx") %>%
+               select("Baseline_visit_kitID","Patient","cohort") %>% rename(IID = Baseline_visit_kitID)
+bridge_file$IID <- as.character(bridge_file$IID)
+
+#cases and controls:
+ubiopred_cases <- fread("ubiopred_cases_IID.txt")
+ubiopred_cases$pheno <- as.factor(1)
+ubiopred_controls <- fread("ubiopred_controls_IID.txt")
+ubiopred_controls$pheno <- as.factor(0)
+
+#ubiopred and bridge file:
+ubiopred_bridge_file <- ubiopred %>% left_join(bridge_file, by = c("Patient","cohort"))
+
+#cases ad bridge file:
+ubiopred_cases_bridge_file <- ubiopred_cases %>% left_join(bridge_file, by = "IID")
+#controls and bridge file:
+ubiopred_controls$IID <- as.character(ubiopred_controls$IID)
+ubiopred_controls_bridge_file <- ubiopred_controls %>% left_join(bridge_file, by = "IID")
+
+#info I need: BMI, Smoking status, Age onset asthma, FEV1 predicted, FEV1/FVC, Eosinophil count, Neutrophil count
+ubiopred_cases_demo <- ubiopred_cases_bridge_file %>% left_join(ubiopred_bridge_file, by = c("IID", "Patient", "cohort"))
+ubiopred_controls_demo <- ubiopred_controls_bridge_file %>% left_join(ubiopred_bridge_file, by = c("IID", "Patient", "cohort"))
+
+#merge ubiopred case and controls:
+ubiopred_demo <- rbind(ubiopred_cases_demo, ubiopred_controls_demo)
+#Age onset asthma: need to create adult and childhood variable: if age on set < 18, childhood, if >= adult.
+ubiopred_demo <- ubiopred_demo %>% mutate(age_onset = ifelse(ubiopred_demo$'Onset_OR_First_Diagnosis_Age_(years)' < 18, "onset_early", "onset_adult"))
+
+#GASP demographics:
+gasp <- read_excel("GASP_demographics.xlsx", sheet = "gasp")
+#info I need: BMI, Smoking status, Age onset asthma, FEV1 predicted, FEV1/FVC, Eosinophil count, Neutrophil count
+
