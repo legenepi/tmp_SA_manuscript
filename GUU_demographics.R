@@ -10,7 +10,6 @@ library(data.table)
 library(hablar)
 library(readxl)
 
-
 #load input
 ##demographic table:
 #cp /home/n/nnp5/PhD/PhD_project/Post_GWAS/input/ubio_gasp_gwas/pheno_cov_ubio_gasp_ukb.txt \
@@ -112,6 +111,22 @@ fwrite(eur_ukbb_in_meta_demo,"ukbb_ctrl_in_GUU_demotraits.txt",sep="\t",quote=F)
 
 #Upload the UKBB data:
 ukbb <- fread("ukbb_ctrl_in_GUU_demotraits.txt")
+##Need to create smoking status as done for the discovery cohort (with cigarette pack per year and smoking status):
+eur_ukbb <- read.table("/data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/demo_EUR_pheno_cov_broadasthma.txt",header=T,sep=" ") %>%
+            select(IID, cigarette_pack_years)
+ukbb_demo <- ukbb %>% left_join(eur_ukbb, by = "IID")
+ukbb_demo <- ukbb_demo %>% mutate(pack_per_year_threshold = case_when(cigarette_pack_years < 5 ~ "less_than_5",
+                                                                          cigarette_pack_years >= 5 ~ "equal_or_more_than_5"))
+
+ukbb_demo <- ukbb_demo %>% mutate(ubiopred_smk = ifelse((ukbb_demo$pack_per_year_threshold == "less_than_5" & ukbb_demo$smoking_status == 1) | ukbb_demo$smoking_status == 0 , "Never_smoker",
+                                                      ifelse(ukbb_demo$smoking_status == 2, "Ever_smoker",
+                                                      ifelse(ukbb_demo$pack_per_year_threshold == "equal_or_more_than_5" & ukbb_demo$smoking_status == 1, "Ever_smoker", NA))))
+
+ukbb_demo <- ukbb_demo %>% rename(GWAS_ID = IID, Sm_Status = ubiopred_smk, age_onset = category_onset,
+                        FEV1_Percent_Predicted = fev1_perc_pred, FEV1_FVC_Ratio = ff.best,
+                        Eosinophils = eos_count, Neutrophils = neu_count) %>%
+                        select(-eid, -smoking_status, -cigarette_pack_years, -pack_per_year_threshold)
+ukbb_demo$pheno <- as.factor(0)
 
 #Upload and clean demographic data for U-BIOPRED:
 #Saved the file in tab format (Excel --> export as txt)
@@ -135,7 +150,7 @@ ubiopred_controls$pheno <- as.factor(0)
 #ubiopred and bridge file:
 ubiopred_bridge_file <- ubiopred %>% left_join(bridge_file, by = c("Patient","cohort"))
 
-#cases ad bridge file:
+#cases and bridge file:
 ubiopred_cases_bridge_file <- ubiopred_cases %>% left_join(bridge_file, by = "IID")
 #controls and bridge file:
 ubiopred_controls$IID <- as.character(ubiopred_controls$IID)
@@ -149,8 +164,73 @@ ubiopred_controls_demo <- ubiopred_controls_bridge_file %>% left_join(ubiopred_b
 ubiopred_demo <- rbind(ubiopred_cases_demo, ubiopred_controls_demo)
 #Age onset asthma: need to create adult and childhood variable: if age on set < 18, childhood, if >= adult.
 ubiopred_demo <- ubiopred_demo %>% mutate(age_onset = ifelse(ubiopred_demo$'Onset_OR_First_Diagnosis_Age_(years)' < 18, "onset_early", "onset_adult"))
+ubiopred_demo <- ubiopred_demo %>% rename(GWAS_ID = "IID", BMI = "Body_Mass_Index_(kg/m2)", Sm_Status = Smoking_Status,
+                        FEV1_Percent_Predicted = "FEV1_Predicted_(L)", FEV1_FVC_Ratio = "FEV1/FVC_Ratio_Predicted",
+                        Eosinophils = "eosinophils_(x10^3/uL)" , Neutrophils = "neutrophils_(x10^3/uL)")
+ubiopred_demo <- ubiopred_demo %>% select(GWAS_ID, pheno, BMI, Sm_Status, FEV1_Percent_Predicted,
+                                          FEV1_FVC_Ratio, age_onset, Eosinophils, Neutrophils)
+#change smoking status into ever and never:
+ubiopred_demo <- ubiopred_demo %>% mutate(Sm_Status = ifelse(ubiopred_demo$Sm_Status == "current_smoker", "Ever_smoker",
+ ifelse(ubiopred_demo$Sm_Status == "ex_smoker", "Ever_smoker",
+ ifelse(ubiopred_demo$Sm_Status == "non_smoker", "Never_smoker", "NA"))))
+ubiopred_demo <- ubiopred_demo %>% mutate(FEV1_FVC_Ratio = ubiopred_demo$FEV1_FVC_Ratio/100)
 
 #GASP demographics:
 gasp <- read_excel("GASP_demographics.xlsx", sheet = "gasp")
 #info I need: BMI, Smoking status, Age onset asthma, FEV1 predicted, FEV1/FVC, Eosinophil count, Neutrophil count
+gasp_IID <- read_table("gasp_cases_IID.txt") %>% rename(GWAS_ID = IID)
+gasp_demo <- gasp_IID %>% left_join(gasp, by = "GWAS_ID")
+gasp_demo$pheno <- as.factor(1)
+gasp_demo <- gasp_demo %>% mutate(age_onset = ifelse(gasp_demo$'Age_of_Onset' < 18, "onset_early", "onset_adult"))
+#change smoking status into ever and never:
+gasp_demo <- gasp_demo %>% mutate(Sm_Status = ifelse(gasp_demo$Sm_Status == "Current smoker", "Ever_smoker",
+ ifelse(gasp_demo$Sm_Status == 'Ex-smoker', "Ever_smoker",
+ ifelse(gasp_demo$Sm_Status == "Never", "Never_smoker", "NA"))))
+gasp_demo <- gasp_demo %>% select(GWAS_ID, pheno, BMI, Sm_Status, FEV1_Percent_Predicted,
+                                  FEV1_FVC_Ratio, age_onset, Eosinophils, Neutrophils)
 
+#Merge all the three datasets:
+all_demo <- rbind(ukbb_demo, gasp_demo, ubiopred_demo)
+write.table(all_demo, "all_GUU_demographics.txt", sep = "\t", quote = F)
+write.table(all_demo, "/data/gen1/UKBiobank_500K/severe_asthma/Noemi_PhD/data/all_GUU_demographics.txt", sep = "\t", quote = F)
+all_demo$Eosinophils <- as.numeric(all_demo$Eosinophils)
+cases_all_demo <- all_demo %>% filter(pheno == 1)
+controls_all_demo <- all_demo %>% filter(pheno == 0)
+
+#BMI:
+print(mean(cases_all_demo$BMI, na.rm=TRUE))
+print(sd(cases_all_demo$BMI, na.rm=TRUE))
+print(mean(controls_all_demo$BMI, na.rm=TRUE))
+print(sd(controls_all_demo$BMI, na.rm=TRUE))
+
+#Smoking status:
+print(table(cases_all_demo$Sm_Status, useNA = "always"))
+print(table(controls_all_demo$Sm_Status, useNA = "always"))
+
+#Category onset asthma:
+print(table(cases_all_demo$age_onset, useNA = "always"))
+print(table(controls_all_demo$age_onset, useNA = "always"))
+
+#FEV1 Predicted:
+print(mean(cases_all_demo$FEV1_Percent_Predicted, na.rm=TRUE))
+print(sd(cases_all_demo$FEV1_Percent_Predicted, na.rm=TRUE))
+print(mean(controls_all_demo$FEV1_Percent_Predicted, na.rm=TRUE))
+print(sd(controls_all_demo$FEV1_Percent_Predicted, na.rm=TRUE))
+
+#FEV1_FVC_Ratio
+print(mean(cases_all_demo$FEV1_FVC_Ratio, na.rm=TRUE))
+print(sd(cases_all_demo$FEV1_FVC_Ratio, na.rm=TRUE))
+print(mean(controls_all_demo$FEV1_FVC_Ratio, na.rm=TRUE))
+print(sd(controls_all_demo$FEV1_FVC_Ratio, na.rm=TRUE))
+
+#Eosinophil count:
+print(mean(cases_all_demo$Eosinophils, na.rm=TRUE))
+print(sd(cases_all_demo$Eosinophils, na.rm=TRUE))
+print(mean(controls_all_demo$Eosinophils, na.rm=TRUE))
+print(sd(controls_all_demo$Eosinophils, na.rm=TRUE))
+
+#Neutrophil count:
+print(mean(cases_all_demo$Neutrophils, na.rm=TRUE))
+print(sd(cases_all_demo$Neutrophils, na.rm=TRUE))
+print(mean(controls_all_demo$Neutrophils, na.rm=TRUE))
+print(sd(controls_all_demo$Neutrophils, na.rm=TRUE))
