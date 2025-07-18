@@ -8,7 +8,7 @@ library(readxl)
 library(cowplot) # it allows you to save figures in .png file
 library(smplot2)
 library(ggpubr)
-
+library("ggrepel")
 
 #replicated:
 repl <- fread("ReplVars.txt")
@@ -43,6 +43,7 @@ gwas <- gwas %>% rename(rsid = snpid)
 repl_gbmi <- repl_gbmi %>% left_join(gwas, by = 'rsid')
 
 df_plot <- repl_gbmi %>% select(rsid, LOG_ODDS, se, eur_gbmi_beta_flipped, inv_var_meta_sebeta)
+df_plot$logOR_diff <- abs(df_plot$LOG_ODDS - df_plot$eur_gbmi_beta_flipped)
 
 png("output/21replvars_DiscVSeurgbmi_effectsize_comparison.png",units="in", width=10, height=10, res=800)
 ggplot(data = df_plot, aes(x = eur_gbmi_beta_flipped, y = LOG_ODDS)) +
@@ -52,7 +53,14 @@ ggplot(data = df_plot, aes(x = eur_gbmi_beta_flipped, y = LOG_ODDS)) +
   geom_point(data = df_plot, aes(x = eur_gbmi_beta_flipped,color="#D55E00",size=0.4)) +
   theme_minimal() + geom_vline(xintercept = 0, linetype="dashed", color = "grey", size = 0.25) +
   geom_hline(yintercept = 0, linetype="dashed", color="grey", size = 0.5) +
-  ylim(-0.25, +0.25) + xlim(-0.25, + 0.25) + xlab("GBMI") + ylab("Discovery")
+  ylim(-0.25, +0.25) + xlim(-0.25, + 0.25) + xlab("Beta (GBMI)") + ylab("Beta (Discovery)") +
+  geom_text_repel(
+    data = subset(df_plot, logOR_diff >= 0.2 ),
+    aes(label = rsid),
+    size = 4,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines"),
+    max.overlaps = 30)
 dev.off()
 
 #Welch's t-test: Bonferroni corrected pvalue: 0.05/21
