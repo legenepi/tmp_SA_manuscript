@@ -21,9 +21,9 @@
 #    grep -v "CAA" \
 #    > /scratch/gen1/nnp5/tmp_manuscript/68sentvars_noallergy
 
-grep -w -F -f /rfs/TobinGroup/nnp5/data/sugg_68_sentinels.txt /rfs/TobinGroup/nnp5/data/maf001_broad_pheno_nocomob_betase_input_mungestat | \
-    grep -v "CAA" \
-    > /scratch/gen1/nnp5/tmp_manuscript/68sentvars_nocomorb
+#grep -w -F -f /rfs/TobinGroup/nnp5/data/sugg_68_sentinels.txt /rfs/TobinGroup/nnp5/data/maf001_broad_pheno_nocomob_betase_input_mungestat | \
+#    grep -v "CAA" \
+#    > /scratch/gen1/nnp5/tmp_manuscript/68sentvars_nocomorb
 
 
 #In R:
@@ -55,7 +55,7 @@ ggplot(data = df_plot, aes(x = logodds_noallergy, y = logodds_gwas)) +
   theme_minimal() + geom_vline(xintercept = 0, linetype="dashed", color = "grey", size = 0.25) +
   geom_hline(yintercept = 0, linetype="dashed", color="grey", size = 0.5) +
   ylim(-0.6, +0.4) + xlim(-0.6, + 0.4) +
-  xlab("Sensitivity no allergy") + ylab("Discovery") +
+  xlab("Beta (Sensitivity no allergy)") + ylab("Beta (Discovery)") +
   geom_text_repel(
     data = subset(df_plot, logOR_diff >= 0.1 ),
     aes(label = snpid),
@@ -81,7 +81,7 @@ ggplot(data = df_plot, aes(x = logodds_nocomorb, y = logodds_gwas)) +
   theme_minimal() + geom_vline(xintercept = 0, linetype="dashed", color = "grey", size = 0.25) +
   geom_hline(yintercept = 0, linetype="dashed", color="grey", size = 0.5) +
   ylim(-0.6, +0.4) + xlim(-0.6, + 0.4) +
-  xlab("Sensitivity no comorbidities") + ylab("Discovery") +
+  xlab("Beta (Sensitivity no comorbidities)") + ylab("Beta (Discovery)") +
   geom_text_repel(
     data = subset(df_plot, logOR_diff >= 0.1 ),
     aes(label = snpid),
