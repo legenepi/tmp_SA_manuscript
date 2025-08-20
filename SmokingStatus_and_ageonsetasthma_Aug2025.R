@@ -2,7 +2,7 @@
 
 #Rationale: create update version of smoking status, age at onset asthma, prednisolone use.
 #For smoking status, co-author raised that the number of unknown is odd
-#For age at onset, it might be that I used two Data-Field when only one was fine.
+#For age at onset, use definition as found by Kath
 #For prednisolone use: strange the difference in unknown. - I think prednisolone use it's fine as it is. It comes from prescription data and not all individuals have primary care records.
 
 library(tidyverse)
@@ -76,4 +76,33 @@ cases_controls_smk <- rbind(controls_smk, cases_smk)
 chisq.test(table(cases_controls_smk$SI,cases_controls_smk$tmp_col))
 
 #Age at onset asthma:
+#File from Kath: /data/gen1/Asthma/childhood_rare/age_onset_for_noemi.csv
+age_onset <- fread("/data/gen1/Asthma/childhood_rare/age_onset_for_noemi.csv") %>%
+                  select(eid, mean_age) %>% filter(!is.na(mean_age))
+age_onset <- age_onset %>% mutate(onset_kf = ifelse(mean_age < 18, "childhood", "adulthood"))
+age_onset$eid <- as.character(age_onset$eid)
+age_onset <- age_onset %>% rename(app56607 = eid)
+#cases
+case_age_onset <- cases_eur %>% left_join(age_onset, by = "app56607")
+print("Cases")
+print("Kath age onset")
+table(case_age_onset$onset_kf,exclude=NULL)
+print(prop.table(table(case_age_onset$onset_kf,exclude=NULL)))
 
+print("Noemi age onset")
+table(case_age_onset$category_onset,exclude=NULL)
+print(prop.table(table(case_age_onset$category_onset,exclude=NULL)))
+
+#asthma not cases:
+asthma_notcases_eur_age_onset <- asthma_notcases_eur %>% left_join(age_onset, by = "app56607")
+
+print("Asthma not cases")
+print("Kath age onset")
+table(asthma_notcases_eur_age_onset$onset_kf,exclude=NULL)
+print(prop.table(table(asthma_notcases_eur_age_onset$onset_kf, exclude=NULL)))
+
+print("Noemi age onset")
+table(asthma_notcases_eur_age_onset$category_onset,exclude=NULL)
+print(prop.table(table(asthma_notcases_eur_age_onset$category_onset,exclude=NULL)))
+
+#not a lot of difference between mine and kath's defintion of age onset, therefore I keep mine.
